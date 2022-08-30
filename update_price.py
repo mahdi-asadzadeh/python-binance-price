@@ -16,26 +16,15 @@ def update_price():
     }
 
     try:
-        url = "https://api.binance.com/api/v3/exchangeInfo"
-        response = requests.request("GET", url, headers=headers, data={}, timeout=250)
-        markets = json.loads(response.text)
-        active = {}
-
-        for market in markets['symbols']:
-            symbol = market['symbol']
-            status = market['status']
-            active[symbol] = status == 'TRADING'
-
-        
         url = "https://api.binance.com/api/v3/ticker/24hr"
         response = requests.request("GET", url, headers=headers, data={})
         tickers = json.loads(response.text)
 
         for ticker in tickers:
             symbol = ticker['symbol']
-            isUSDT = re.search("USDT$", symbol)
-            if isUSDT:
-                pipe.set(symbol, ticker['lastPrice'])
+            # isUSDT = re.search("USDT$", symbol)
+            # if isUSDT:
+            pipe.set(symbol, ticker['lastPrice'])
 
         # Insert bulk data in redis
         pipe.execute()
