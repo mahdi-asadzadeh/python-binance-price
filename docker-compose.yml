@@ -1,0 +1,43 @@
+version: '3'
+
+
+services:
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - main
+
+  app:
+    build:
+      context: .
+      dockerfile: DockerFiles/main.Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - main
+    container_name: app
+    command: "python main.py"
+    depends_on:
+      - redis
+      - price
+
+  price:
+    build:
+      context: .
+      dockerfile: DockerFiles/price.Dockerfile
+    restart: always
+    networks:
+      - main
+    container_name: price
+    command: "python update_price.py"
+    depends_on:
+      - redis
+
+networks:
+  main:
+    external: true
