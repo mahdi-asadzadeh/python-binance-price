@@ -53,21 +53,26 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     while True:
         symbol = await websocket.receive_text()
-        symbol_split = symbol.split("-")
+        result_price = redis_conn.get(symbol.replace("-", ""))
+        if result_price:
+            await websocket.send_text(f"{symbol} : {result_price.decode('utf-8')}")
 
-        if symbol_split[1] != "USDT":
-            base_asset = symbol_split[0] + "USDT"
-            quote_asset = symbol_split[1] + "USDT"
-
-            base_asset_price = redis_conn.get(base_asset)
-            quote_assett_price = redis_conn.get(quote_asset)
-            try:
-                result_price = float(base_asset_price.decode('utf-8')) / float(quote_assett_price.decode('utf-8'))
-            except ZeroDivisionError as e:
-                result_price = 0
         else:
-            result_price = redis_conn.get(symbol.replace("-", "")).decode('utf-8')
-        await websocket.send_text(f"{symbol} : {result_price}")
+            symbol_split = symbol.split("-")
+
+            if symbol_split[1] != "USDT":
+                base_asset = symbol_split[0] + "USDT"
+                quote_asset = symbol_split[1] + "USDT"
+
+                base_asset_price = redis_conn.get(base_asset)
+                quote_assett_price = redis_conn.get(quote_asset)
+                try:
+                    result_price = float(base_asset_price.decode('utf-8')) / float(quote_assett_price.decode('utf-8'))
+                except ZeroDivisionError as e:
+                    result_price = 0
+            else:
+                result_price = redis_conn.get(symbol.replace("-", "")).decode('utf-8')
+            await websocket.send_text(f"{symbol} : {result_price}")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
